@@ -9,3 +9,8 @@ this repository includes worth-wile things
 
 clone this repo and copy its contents to `$HOME/.pi/agent`
 
+## Skills
+
+> [!NOTE]
+
+the contents of the skills directory should also work for other agents.
