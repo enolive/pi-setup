@@ -1,0 +1,11 @@
+{
+  "name": "pi-setup",
+  "version": "1.0.0",
+  "description": "Hand-crafted pi setup with extensions, skills, and prompts",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./extensions/*/index.ts"],
+    "skills": ["./skills"],
+    "prompts": ["./prompts"]
+  }
+}
