@@ -106,6 +106,7 @@ function sessionIdFor(ctx: ExtensionContext): string {
 	return `pi-${randomUUID()}`;
 }
 
+// noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
 	const peonPath = resolveExecutable(PEON_BIN);
 	if (!peonPath) {

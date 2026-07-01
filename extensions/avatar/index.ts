@@ -7,9 +7,10 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { readFileSync } from "node:fs";
-import { Image, getCapabilities } from "@earendil-works/pi-tui";
+import {Image, getCapabilities, ImageTheme} from "@earendil-works/pi-tui";
 import path from 'path';
 
+// noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.mode !== "tui") return;
@@ -27,7 +28,7 @@ export default function (pi: ExtensionAPI) {
     const imageData = readFileSync(imagePath);
     const base64Data = imageData.toString("base64");
 
-    const imageTheme = {
+    const imageTheme: ImageTheme = {
       fallbackColor: (s: string) => theme.fg("muted", s),
     };
 
