@@ -17,9 +17,11 @@
       "./prompts"
     ]
   },
-  "devDependencies": {
+  "peerDependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.3",
-    "@earendil-works/pi-tui": "^0.80.3",
+    "@earendil-works/pi-tui": "^0.80.3"
+  },
+  "devDependencies": {
     "@types/node": "^26.1.0"
   }
 }
