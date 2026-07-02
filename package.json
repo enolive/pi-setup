@@ -6,6 +6,10 @@
   "keywords": [
     "pi-package"
   ],
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint ."
+  },
   "pi": {
     "extensions": [
       "./extensions/*/index.ts"
@@ -22,6 +26,12 @@
     "@earendil-works/pi-tui": "^0.80.3"
   },
   "devDependencies": {
-    "@types/node": "^26.1.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "jiti": "^2.7.0",
+    "prettier": "^3.9.4",
+    "typescript-eslint": "^8.62.1"
   }
 }

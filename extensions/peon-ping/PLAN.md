@@ -28,6 +28,7 @@ Set up the project scaffolding all subsequent tasks depend on.
   - Per-event fake builder functions: `makeSessionStartEvent`, `makeToolExecutionEndEvent`, etc.
 
 The test flow for every handler test is then:
+
 1. Call the default export with `makePi()` — this registers all handlers into the map
 2. Retrieve the specific handler: `const handler = fakePi.getHandler("session_start")`
 3. Invoke it directly: `await handler(makeSessionStartEvent({ reason: "startup" }), makeCtx())`
@@ -53,6 +54,7 @@ File: `test/resolveExecutable.test.ts`
 No mocking needed — uses real temp dirs and files.
 
 Cases:
+
 - finds an executable by name when it is on PATH
 - returns `undefined` for a name not on PATH
 - resolves an absolute path that is executable
@@ -69,6 +71,7 @@ File: `test/sendToPeon.test.ts`
 Mock `node:child_process` with `mock.module`. The mock `spawn` returns a fake child: a `stdin` that accumulates written bytes, an `on(event, fn)` that captures listeners, and an explicit way to trigger `close`/`error`.
 
 Cases:
+
 - sends the payload as JSON to `child.stdin`
 - resolves when the child emits `close`
 - resolves silently when `spawn` throws (ENOENT-style)
@@ -83,6 +86,7 @@ File: `test/handlers.test.ts`
 Uses `makePi()` / `makeCtx()` from `test/helpers.ts`. Mocks `sendToPeon` via `mock.module("./lib.ts", ...)` and asserts what it was called with.
 
 Cases:
+
 - `session_start` reason `"startup"` → `sendToPeon` called with `SessionStart`, `source: "startup"`
 - `session_start` reason `"resume"` → `sendToPeon` called with `SessionStart`, `source: "resume"`
 - `before_agent_start` → `sendToPeon` called with `UserPromptSubmit`
@@ -101,6 +105,7 @@ File: `test/handlers-guards.test.ts` (or appended to Task 4 file)
 Same mocking approach; asserts `sendToPeon` is **not** called.
 
 Cases:
+
 - `session_start` reason `"reload"` → `sendToPeon` not called
 - `session_start` reason `"fork"` → `sendToPeon` not called
 - `session_start` with `ctx.hasUI: false` → `sendToPeon` not called
@@ -115,11 +120,13 @@ File: `test/command.test.ts`
 Two layers:
 
 **`runPeon` unit tests** — mock `node:child_process`; assert the right argv is spawned and that stdout/stderr are returned correctly:
+
 - resolves with stdout when the child exits cleanly
 - resolves with stderr when only stderr is written
 - rejects on spawn error
 
 **Command handler integration** — use `makePi()` / `makeCtx()`, retrieve the registered `/peon` command handler, invoke it, assert `ctx.ui.notify` is called correctly:
+
 - no args → calls `runPeon` with `["status"]`, notifies with output and level `"info"`
 - `"volume 0.3"` → calls `runPeon` with `["volume", "0.3"]`
 - stderr output (no stdout) → notifies with level `"error"`
