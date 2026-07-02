@@ -102,14 +102,6 @@ function sessionIdFor(ctx: ExtensionContext): string {
   return `pi-${randomUUID()}`
 }
 
-function executePeon(peonPath: string, parts: string[]) {
-  const result = spawnSync(peonPath, parts, { encoding: 'utf8', stdio: 'pipe' })
-  const { status, stderr, stdout } = result
-  const out = (stdout.toString() + stderr.toString()).trim()
-
-  return { status, out }
-}
-
 // noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
   const peonPath = resolveExecutable(PEON_BIN)
@@ -178,30 +170,5 @@ export default function (pi: ExtensionAPI) {
       session_id: sessionIdFor(ctx),
       cwd: ctx.cwd,
     })
-  })
-
-  // /peon <args…> — forward to the CLI so users can tweak config without
-  // leaving pi. Output is captured and shown via ctx.ui.notify.
-  pi.registerCommand('peon', {
-    description: 'Run the peon CLI (e.g. /peon status, /peon volume 0.3, /peon packs list)',
-    handler: async (args, ctx) => {
-      const argv = args.trim()
-      const parts = argv.length > 0 ? argv.split(/\s+/) : ['status']
-      let result
-      try {
-        result = executePeon(peonPath, parts)
-      } catch (err) {
-        ctx.ui.notify(`peon: ${(err as Error).message}`, 'error')
-        return
-      }
-      const { status, out } = result
-      if (status !== 0) {
-        ctx.ui.notify(out || `peon exited with code ${status}`, 'error')
-      } else if (out) {
-        ctx.ui.notify(out, 'info')
-      } else {
-        ctx.ui.notify(`peon ${parts.join(' ')} — (no output)`, 'info')
-      }
-    },
   })
 }
