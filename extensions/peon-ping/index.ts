@@ -18,7 +18,7 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { accessSync, constants as fsConstants } from 'node:fs'
 import { delimiter, isAbsolute, join } from 'node:path'
@@ -77,15 +77,30 @@ function resolveExecutable(name: string): string | undefined {
 
 /** Fire-and-forget invocation: pipe JSON to `peon` on stdin, ignore output. */
 function dispatchPeonEvent(peonPath: string, payload: HookPayload): void {
-  try {
-    spawnSync(peonPath, [], {
-      input: JSON.stringify(payload),
-      stdio: 'pipe',
-      encoding: 'utf8',
-    })
-  } catch {
-    // Spawn failed (ENOENT, EACCES) — swallow, this is fire-and-forget.
-  }
+  const input = JSON.stringify(payload)
+  const child = spawn(peonPath, [], {
+    stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr
+  })
+
+  // Kill after 5 seconds to prevent hangs
+  const timeout = setTimeout(() => {
+    child.kill('SIGTERM')
+  }, 5000)
+
+  child.on('error', () => {
+    // Spawn failed (ENOENT, EACCES) — still clean up
+    clearTimeout(timeout)
+    // Swallow, this is fire-and-forget.
+  })
+
+  child.on('close', () => {
+    clearTimeout(timeout)
+    // Fire-and-forget, no need to do anything with exit code.
+  })
+
+  // Write input and close stdin
+  child.stdin?.write(input)
+  child.stdin?.end()
 }
 
 function sessionIdFor(ctx: ExtensionContext): string {
