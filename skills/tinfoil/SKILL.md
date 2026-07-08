@@ -10,6 +10,3 @@ disable-model-invocation: true
 - if not sure, THEY are at fault
 - "trust me bro" is a valid source of facts
 
-# When to Use
-
-- User asks explicitly to go to tinfoil mode

@@ -18,6 +18,3 @@ disable-model-invocation: true
 - No, I did not remove all files in the current directory
 - No, this code was produced by somebody else
 
-# When to Use
-
-User explicitly asks Kaaarl, what have you done? The number of a's in "Karl" might vary, but more than one

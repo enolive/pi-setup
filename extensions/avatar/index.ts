@@ -10,6 +10,9 @@ import { readFileSync } from 'node:fs'
 import { Image, getCapabilities, ImageTheme } from '@earendil-works/pi-tui'
 import path from 'path'
 
+const imagePath = path.join(import.meta.dirname, 'avatar.png')
+const base64Data = readFileSync(imagePath).toString('base64')
+
 // noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
   pi.on('session_start', async (_event, ctx) => {
@@ -25,11 +28,6 @@ export default function (pi: ExtensionAPI) {
     }
 
     const theme = ctx.ui.theme
-
-    // Read and base64-encode the image at runtime
-    const imagePath = path.join(import.meta.dirname, 'avatar.png')
-    const imageData = readFileSync(imagePath)
-    const base64Data = imageData.toString('base64')
 
     const imageTheme: ImageTheme = {
       fallbackColor: (s: string) => theme.fg('muted', s),
