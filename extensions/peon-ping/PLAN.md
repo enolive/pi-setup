@@ -357,6 +357,9 @@ model issues. Keep it small and easy to remove later:
 
 Important actionable warnings should remain visible without enabling debug logs:
 
+- when debug logging is activated and a pi context with UI is available, show a
+  one-time `ctx.ui.notify` message that debug logging is enabled and includes the
+  configured log path;
 - startup/setup problems without a context, such as missing `peon`, should use
   `console.warn`;
 - runtime problems with a pi context may use `ctx.ui.notify(..., "warning" | "error")`
