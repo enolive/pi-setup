@@ -1,134 +1,368 @@
-# peon-ping extension — test suite plan
+# peon-ping extension — refactor and test plan
 
 ## Motivation
+
+### Elevator pitch
+
+AI agents increasingly work unattended: they run commands, wait on tools, hit
+errors, compact context, and finish tasks while the user is looking elsewhere.
+`pi-peon-adapter` turns those invisible lifecycle moments into immediate,
+configurable local signals through `peon`, without pi needing to grow its own
+sound/notification subsystem. The value is faster human response, fewer missed
+failures, and better situational awareness during long-running coding-agent
+sessions — with a tiny adapter that delegates all notification policy to an
+existing dedicated tool.
+
+If the make-vs-buy decision needs to be revisited, see
+[`research/existing-pi-peon-implementations.md`](research/existing-pi-peon-implementations.md)
+for the market scan and management summary explaining why this adapter should be
+built instead of adopting an existing package.
+
+### Technical motivation
 
 The extension is a thin but stateful bridge: it maps pi lifecycle events to
 specific JSON payloads and pipes them into the `peon` CLI. Getting the payload
 wrong is silent — peon either plays no sound or plays the wrong one, and there
 is no error to observe. The mapping rules also have non-obvious guard conditions
-(skip on reload, skip when no UI, only fire on Bash errors) that are easy to
-break when touching the code.
+(skip `SessionStart` on reload/fork/no UI, only fire tool failures for Bash
+errors) that are easy to break when touching the code.
 
-A test suite makes those contracts explicit and cheap to verify. It is also a
-prerequisite for publishing: anyone installing via `pi install npm:pi-peon-ping`
-should be able to run `bun test` and confirm the bridge behaves as documented
-before trusting it with their setup.
+The current `index.ts` mixes three concerns in one file:
 
----
+- pi handler registration and pi-event-to-peon-payload mapping;
+- peon executable lookup;
+- child-process dispatch.
 
-## Task 0 — Base project harness
-
-Set up the project scaffolding all subsequent tasks depend on.
-
-- `package.json` — declare `bun` as dev dep, add `"test": "bun test"` script, set `"name": "pi-peon-ping"`, add `"pi-package"` keyword, `"pi"` manifest pointing at `./index.ts`, `@earendil-works/pi-coding-agent` in `peerDependencies`
-- `tsconfig.json` — strict mode, `node` module resolution, `node` lib, exclude `node_modules`
-- `test/helpers.ts` — shared builders:
-  - `makePi()` — fake `ExtensionAPI` that, when `pi.on(event, fn)` is called, simply stores `fn` in a map keyed by event name. Same for `pi.registerCommand(name, def)`. Exposes `getHandler(event)` and `getCommand(name)` to retrieve them. No event bus, no simulation — the default export in `index.ts` is a plain function that calls `pi.on(...)` synchronously during setup, so calling it with `fakePi` is enough to populate the map.
-  - `makeCtx(overrides?)` — fake `ExtensionContext` with sensible defaults (`cwd: "/project"`, `hasUI: true`, `sessionManager` returning a stable fake session file path)
-  - Per-event fake builder functions: `makeSessionStartEvent`, `makeToolExecutionEndEvent`, etc.
-
-The test flow for every handler test is then:
-
-1. Call the default export with `makePi()` — this registers all handlers into the map
-2. Retrieve the specific handler: `const handler = fakePi.getHandler("session_start")`
-3. Invoke it directly: `await handler(makeSessionStartEvent({ reason: "startup" }), makeCtx())`
-4. Assert what the mocked `sendToPeon` was called with
+Split by real integration boundary, not by artificial domain concepts.
 
 ---
 
-## Task 1 — Extract `lib.ts`
+## Target file layout
 
-Move the pure/spawning internals out of `index.ts` so they are independently importable and testable.
+The extension should eventually move into a standalone pi package named
+`pi-peon-adapter`. While it still lives in this setup repo, keep the same
+shape under `extensions/peon-ping/` so the move is mostly a copy/rename later.
 
-- Create `lib.ts` exporting: `HookEvent` type, `HookPayload` interface, `resolveExecutable(name, pathEnv?)`, `sendToPeon(peonPath, payload): Promise<void>`, `runPeon(peonPath, args): Promise<{ stdout: string; stderr: string }>`
-- `sendToPeon` returns `Promise<void>` resolving on child `close` (currently fire-and-forget void — tests need to await it)
-- `runPeon` encapsulates what is currently inline in the `/peon` command handler: spawn the process, collect stdout and stderr, resolve on close, reject on spawn error
-- Update `index.ts` to import all of the above from `./lib.ts`; the `/peon` command handler becomes a short delegation to `runPeon` followed by a `ctx.ui.notify` call; remove all now-duplicate local implementations
+Keep unit tests side-by-side with the implementation they exercise. Only shared
+test helpers and broader integration tests go in `test/`.
+
+```text
+# current state inside this repo
+extensions/peon-ping/
+  index.ts                 # EVERYTHING
+
+# standalone-shaped layout to create under extensions/peon-ping/
+# and later copy to a dedicated pi-peon-adapter repository/package
+pi-peon-adapter/
+  package.json
+  tsconfig.json
+  vitest.config.ts         # test config once vitest tests are added
+  index.ts                 # facade: export { default } from './src'
+  src/
+    index.ts               # extension composition
+    pi.ts                  # pi handler registration + payload mapping
+    pi.test.ts             # side-by-side tests for pi.ts
+    peon.ts                # executable resolution + child-process dispatch
+    peon.test.ts           # side-by-side tests for peon.ts
+  test/
+    helpers/
+      fake-pi.ts           # fake pi handler collector + fake ctx if shared
+      fake-child.ts        # fake child/spawn helpers if shared
+    integration.test.ts    # extension-level wiring test
+```
+
+Do not add a separate protocol/types file yet. The peon payload type can live in
+`pi.ts` until it is genuinely shared enough to justify another module.
+
+When a task touches event mapping, runtime dispatch, or file boundaries, consult
+[`research/helle253-pi-peon-reference.md`](research/helle253-pi-peon-reference.md)
+for reference-implementation inspection notes. Use its "What to copy
+conceptually" / "What not to copy directly" sections as action guidance without
+repeating those details here. This is not a separate blocking step before Task 0.
 
 ---
 
-## Task 2 — `resolveExecutable` tests
+## Progress
 
-File: `test/resolveExecutable.test.ts`
+Use this as a lightweight breadcrumb trail if work gets interrupted by side
+quests.
 
-No mocking needed — uses real temp dirs and files.
+- [x] Rewrite this plan to match the current single-file implementation and the
+      desired incremental refactor direction.
+- [ ] Task 0 — Add standalone-package scaffolding for `pi-peon-adapter`.
+- [ ] Task 1 — Extract `src/pi.ts`.
+- [ ] Task 2 — Extract `src/peon.ts`.
+- [ ] Task 3 — Shrink `src/index.ts` and keep root `index.ts` as a facade.
+- [ ] Add/adjust side-by-side tests and the small integration test.
+
+---
+
+## Refactor tasks
+
+Do these tasks incrementally. Each task should leave the extension working and
+should be testable on its own; avoid a large all-at-once rewrite. If a later
+step starts feeling unnecessary, stop and keep the smaller structure.
+
+### Task 0 — Add standalone-package scaffolding
+
+Prepare `extensions/peon-ping/` so it can become a standalone package named
+`pi-peon-adapter` later.
+
+Add local project files next to the extension and introduce the standalone-shaped
+source layout:
+
+- `package.json`
+  - `"name": "pi-peon-adapter"`
+  - `"type": "module"`
+  - `"main": "src/index.ts"`
+  - `"keywords": ["pi-package"]`
+  - `"pi": { "extensions": ["./index.ts"] }`
+  - scripts for the local package, for example:
+    - `"test": "vitest run"`
+    - `"test:unit": "vitest run src"`
+    - `"test:integration": "vitest run test/integration.test.ts"`
+    - `"typecheck": "tsc --noEmit"`
+  - `@earendil-works/pi-coding-agent` as a peer dependency
+  - test/typecheck tooling as dev dependencies only if not inherited from this
+    setup repo
+- `tsconfig.json`
+  - strict settings compatible with the root project
+  - include `index.ts`, `src/**/*.ts`, and `test/**/*.ts`
+  - exclude `node_modules`
+- `vitest.config.ts` once tests are introduced
+  - node environment
+  - `restoreMocks: true`
+  - `clearMocks: true`
+  - exclude `test/helpers/**/*.ts` from coverage if coverage is added
+- `src/index.ts`
+  - move the current implementation here unchanged as the first mechanical step
+- root `index.ts`
+  - replace with a tiny facade that re-exports the default extension from
+    `./src`, matching the `pi-requesty` package-facing entrypoint pattern
+  - this keeps the current setup repo's `./extensions/*/index.ts` manifest
+    working while matching the future package's public entrypoint
+- optional local `README.md` later, once behavior and install commands are final
+
+Keep this first step small: do not move files out of the setup repo yet, and do
+not refactor behavior while creating the package shape. The goal is only to make
+the extension directory self-contained enough that the later standalone
+extraction is mechanical.
+
+Follow the `pi-requesty` convention of keeping imports extensionless inside
+`src/`, e.g. `import { registerPiHandlers } from './pi'`.
+
+### Task 1 — Extract `src/pi.ts`
+
+Move all pi-bound behavior from `src/index.ts` into `src/pi.ts`:
+
+- `HookEvent` type
+- `HookPayload` interface
+- `PeonSink` interface: `{ send(payload: HookPayload): void }`
+- `registerPiHandlers(pi, peon)`
+- private `sessionIdFor(ctx)` helper
+- private/base payload helpers as useful
+
+`pi.ts` owns all pi event mapping and guard conditions:
+
+- `session_start`
+  - skip when `ctx.hasUI` is false
+  - skip reasons `"reload"` and `"fork"`
+  - emit `SessionStart`
+  - `source` is `"resume"` for resume, otherwise `"startup"`
+- `before_agent_start` → `UserPromptSubmit`
+- `agent_end` → `Stop`
+- `tool_execution_end`
+  - skip when `isError` is false
+  - skip when `toolName !== "bash"`
+  - emit `PostToolUseFailure`, `tool_name: "Bash"`, `error: "bash failed"`
+- `session_before_compact` → `PreCompact`
+- `session_shutdown` → `SessionEnd`
+
+Every emitted payload includes:
+
+- `session_id`, derived from `ctx.sessionManager.getSessionFile()` when
+  available and prefixed with `pi-`;
+- `cwd`, copied from `ctx.cwd`.
+
+### Task 2 — Extract `src/peon.ts`
+
+Move executable lookup and process dispatch into `src/peon.ts`:
+
+- `resolveExecutable(name, options?)`
+- `createPeonSink(peonPath, options?)`
+- `dispatchPeonEvent(peonPath, payload, options?)`
+
+Use dependency injection at the boundary so tests do not need global module
+mocking:
+
+- injectable `pathEnv`
+- injectable `canExecute(path): boolean`
+- injectable `spawn`
+- injectable `setTimeout` / `clearTimeout` if timeout behavior is tested
+
+Defaults should use real Node APIs.
+
+Current process behavior to preserve:
+
+- spawn `peonPath` with piped stdio;
+- write `JSON.stringify(payload)` to stdin;
+- close stdin;
+- clear timeout on child `error` or `close`;
+- kill child after 5 seconds if it does not close/error;
+- do not await completion or throw from send.
+
+### Task 3 — Shrink `src/index.ts`
+
+`src/index.ts` should only compose the pieces:
+
+1. choose `process.env.PEON_BIN || "peon"`;
+2. resolve the executable;
+3. warn and return when missing;
+4. call `registerPiHandlers(pi, createPeonSink(peonPath))`.
+
+Optionally expose a factory for integration testing without global mocks:
+
+```ts
+export interface PeonPingDeps {
+  peonBin?: string
+  resolveExecutable?: (name: string) => string | undefined
+  createPeonSink?: (path: string) => PeonSink
+  warn?: (message: string) => void
+}
+
+export function createPeonPingExtension(deps?: PeonPingDeps) { ... }
+export default createPeonPingExtension()
+```
+
+---
+
+## Test placement and scope
+
+### `src/pi.test.ts` — side-by-side with `src/pi.ts`
+
+Test through `registerPiHandlers()`, not detached mapper functions. Use a fake
+`ExtensionAPI` that stores `pi.on(event, handler)` registrations and a fake
+`PeonSink` that records payloads.
 
 Cases:
 
-- finds an executable by name when it is on PATH
-- returns `undefined` for a name not on PATH
-- resolves an absolute path that is executable
-- returns `undefined` for an absolute path that is not executable
-- returns `undefined` for an absolute path that does not exist
-- returns the first match when PATH contains multiple dirs
+- registers all expected handlers;
+- `session_start` reason `"startup"` emits `SessionStart`, `source: "startup"`;
+- `session_start` reason `"resume"` emits `SessionStart`, `source: "resume"`;
+- `before_agent_start` emits `UserPromptSubmit`;
+- `agent_end` emits `Stop`;
+- `tool_execution_end` with `isError: true`, `toolName: "bash"` emits
+  `PostToolUseFailure`, `tool_name: "Bash"`, `error: "bash failed"`;
+- `session_before_compact` emits `PreCompact`;
+- `session_shutdown` emits `SessionEnd`;
+- session id is derived from the session file basename and prefixed with `pi-`;
+- fallback session id starts with `pi-` when no session file exists;
+- guard conditions do not send payloads:
+  - `session_start` reason `"reload"`;
+  - `session_start` reason `"fork"`;
+  - `session_start` with `ctx.hasUI: false`;
+  - `tool_execution_end` with `isError: false`;
+  - `tool_execution_end` with non-bash tool name.
 
----
+No Node module mocking should be needed.
 
-## Task 3 — `sendToPeon` tests
+### `src/peon.test.ts` — side-by-side with `src/peon.ts`
 
-File: `test/sendToPeon.test.ts`
+Test the process boundary with injected fakes, not global module mocks.
 
-Mock `node:child_process` with `mock.module`. The mock `spawn` returns a fake child: a `stdin` that accumulates written bytes, an `on(event, fn)` that captures listeners, and an explicit way to trigger `close`/`error`.
+`resolveExecutable()` cases:
+
+- finds an executable by name on injected `PATH`;
+- returns `undefined` for a name not on injected `PATH`;
+- resolves an absolute/path-containing executable when `canExecute` returns
+  true;
+- returns `undefined` for direct paths when `canExecute` returns false;
+- returns first match when multiple path entries contain the executable.
+
+`dispatchPeonEvent()` / `createPeonSink()` cases:
+
+- writes JSON payload to child stdin;
+- ends child stdin;
+- clears timeout on `close`;
+- clears timeout on `error`;
+- kills child after timeout;
+- swallows spawn/stdin errors if the implementation keeps that behavior.
+
+No real `peon` binary should be required.
+
+### `test/helpers/`
+
+Put shared helper code here only if it is used by multiple tests. Prefer small,
+focused helper files over one catch-all `helpers.ts`, following the `pi-requesty`
+style:
+
+- `test/helpers/fake-pi.ts`
+  - `makePi()` fake `ExtensionAPI` handler collector;
+  - `makeCtx(overrides?)` fake pi context, if shared by multiple tests.
+- `test/helpers/fake-child.ts`
+  - fake child/spawn builders for `peon.test.ts` and integration tests, if shared.
+
+If a helper is only used by one side-by-side test file, keep it local to that
+file instead.
+
+### `test/integration.test.ts`
+
+Keep broader extension-level wiring tests here. These should stay few and
+focused.
 
 Cases:
 
-- sends the payload as JSON to `child.stdin`
-- resolves when the child emits `close`
-- resolves silently when `spawn` throws (ENOENT-style)
-- resolves silently when `stdin.end` throws
+- when executable resolution fails, the extension warns and registers no pi
+  handlers;
+- when executable resolution succeeds, the extension registers handlers and a
+  representative event reaches the injected peon sink.
+
+Use the optional `createPeonPingExtension(deps)` factory so this test can inject
+resolver/sink/warn dependencies instead of mocking `process.env`, `console`, fs,
+or child process modules.
 
 ---
 
-## Task 4 — Handler happy-path tests
+## Diagnostics / logging
 
-File: `test/handlers.test.ts`
+Pi does not currently expose a first-class extension logger with session-aware
+context and rotation. Do not build a full logging subsystem in this adapter.
 
-Uses `makePi()` / `makeCtx()` from `test/helpers.ts`. Mocks `sendToPeon` via `mock.module("./lib.ts", ...)` and asserts what it was called with.
+Add debug logging now so the extension can be run for a while before publishing
+and weird behavior can be distinguished from external factors such as ACP or
+model issues. Keep it small and easy to remove later:
 
-Cases:
+- enabled only via an explicit log path, for example
+  `PI_PEON_ADAPTER_DEBUG_LOG=/tmp/pi-peon-adapter.log`;
+- the presence of that explicit path is the only criterion for producing debug
+  logs; when it is unset, do not log debug information at all;
+- if the configured log path becomes unavailable or writing fails, silently stop
+  attempting debug logging for that process instead of warning repeatedly;
+- plain text, not NDJSON or another structured format;
+- append short human-readable lines with timestamp, hook name, cwd/session id
+  when available, and the peon executable path/error when relevant;
+- no rotation, retention policy, or global log management inside the adapter;
+  users can point the path at a system-managed location such as `/tmp` or a
+  `/var/log` file that is already handled by external rotation/wiping policy.
 
-- `session_start` reason `"startup"` → `sendToPeon` called with `SessionStart`, `source: "startup"`
-- `session_start` reason `"resume"` → `sendToPeon` called with `SessionStart`, `source: "resume"`
-- `before_agent_start` → `sendToPeon` called with `UserPromptSubmit`
-- `agent_end` → `sendToPeon` called with `Stop`
-- `tool_execution_end` with `isError: true`, `toolName: "bash"` → `sendToPeon` called with `PostToolUseFailure`, `tool_name: "Bash"`, `error` contains `"bash"`
-- `session_before_compact` → `sendToPeon` called with `PreCompact`
-- `session_shutdown` → `sendToPeon` called with `SessionEnd`
-- `session_id` is derived from `ctx.sessionManager.getSessionFile()` and prefixed with `pi-`
+Important actionable warnings should remain visible without enabling debug logs:
+
+- startup/setup problems without a context, such as missing `peon`, should use
+  `console.warn`;
+- runtime problems with a pi context may use `ctx.ui.notify(..., "warning" | "error")`
+  if they are actionable for the user and not expected to be noisy.
+
+Normal successful dispatch should stay silent.
 
 ---
 
-## Task 5 — Handler guard-condition tests
+## Non-goals
 
-File: `test/handlers-guards.test.ts` (or appended to Task 4 file)
-
-Same mocking approach; asserts `sendToPeon` is **not** called.
-
-Cases:
-
-- `session_start` reason `"reload"` → `sendToPeon` not called
-- `session_start` reason `"fork"` → `sendToPeon` not called
-- `session_start` with `ctx.hasUI: false` → `sendToPeon` not called
-- `tool_execution_end` with `isError: false` → `sendToPeon` not called
-
----
-
-## Task 6 — `/peon` command tests
-
-File: `test/command.test.ts`
-
-Two layers:
-
-**`runPeon` unit tests** — mock `node:child_process`; assert the right argv is spawned and that stdout/stderr are returned correctly:
-
-- resolves with stdout when the child exits cleanly
-- resolves with stderr when only stderr is written
-- rejects on spawn error
-
-**Command handler integration** — use `makePi()` / `makeCtx()`, retrieve the registered `/peon` command handler, invoke it, assert `ctx.ui.notify` is called correctly:
-
-- no args → calls `runPeon` with `["status"]`, notifies with output and level `"info"`
-- `"volume 0.3"` → calls `runPeon` with `["volume", "0.3"]`
-- stderr output (no stdout) → notifies with level `"error"`
-- no output → notifies with a `"(no output)"` fallback
-- spawn error → notifies with the error message and level `"error"`
+- Do not test the real `peon` CLI.
+- Do not require an installed sound pack.
+- Do not introduce a separate peon protocol/types file unless the implementation
+  grows enough to need it.
+- Do not introduce a permanent custom logging system; temporary debug logging
+  should remain removable.
+- Do not reintroduce the removed awaited `sendToPeon()` / `runPeon()` design;
+  the extension is currently fire-and-forget.
