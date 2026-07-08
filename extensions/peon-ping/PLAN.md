@@ -13,6 +13,16 @@ failures, and better situational awareness during long-running coding-agent
 sessions — with a tiny adapter that delegates all notification policy to an
 existing dedicated tool.
 
+Leaving the current one-file extension as-is is risky because failures are mostly
+silent: a missed or malformed hook looks the same as peon being muted, ACP acting
+weird, a model behaving unexpectedly, or the user simply not noticing the sound.
+The main reason for further work is therefore **tests**: the event-to-hook mapping
+and guard conditions are the product. They need executable coverage so we can
+change pi versions, adjust event choices, or publish the adapter without relying
+on manual listening tests. The refactor exists mostly to make those tests small
+and trustworthy; opt-in debug logging is the supporting tool for soak testing in
+real sessions.
+
 If the make-vs-buy decision needs to be revisited, see
 [`research/existing-pi-peon-implementations.md`](research/existing-pi-peon-implementations.md)
 for the market scan and management summary explaining why this adapter should be
