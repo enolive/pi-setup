@@ -23,7 +23,9 @@ on manual listening tests. The refactor exists mostly to make those tests small
 and trustworthy; opt-in debug logging is the supporting tool for soak testing in
 real sessions.
 
-If the make-vs-buy decision needs to be revisited, see
+For a slide-style version of this argument, see
+[`research/management-slide-deck.md`](research/management-slide-deck.md). If the make-vs-buy
+decision needs to be revisited, see
 [`research/existing-pi-peon-implementations.md`](research/existing-pi-peon-implementations.md)
 for the market scan and management summary explaining why this adapter should be
 built instead of adopting an existing package.
