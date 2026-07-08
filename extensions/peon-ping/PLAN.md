@@ -4,27 +4,17 @@
 
 ### Elevator pitch
 
-AI agents increasingly work unattended: they run commands, wait on tools, hit
-errors, compact context, and finish tasks while the user is looking elsewhere.
-`pi-peon-adapter` turns those invisible lifecycle moments into immediate,
-configurable local signals through `peon`, without pi needing to grow its own
-sound/notification subsystem. The value is faster human response, fewer missed
-failures, and better situational awareness during long-running coding-agent
-sessions — with a tiny adapter that delegates all notification policy to an
-existing dedicated tool.
+AI coding agents are starting to work unattended, but humans still miss the important moments: when the agent finishes, fails, or needs attention.
 
-Leaving the current one-file extension as-is is risky because failures are mostly
-silent: a missed or malformed hook looks the same as peon being muted, ACP acting
-weird, a model behaving unexpectedly, or the user simply not noticing the sound.
-The main reason for further work is therefore **tests**: the event-to-hook mapping
-and guard conditions are the product. They need executable coverage so we can
-change pi versions, adjust event choices, or publish the adapter without relying
-on manual listening tests. The refactor exists mostly to make those tests small
-and trustworthy; opt-in debug logging is the supporting tool for soak testing in
-real sessions.
+We already have a prototype that connects pi to peon notifications, but it is silent when it breaks and has no tests, so we cannot trust it enough to publish.
 
-For a slide-style version of this argument, see
-[`research/management-slide-deck.md`](research/management-slide-deck.md). If the make-vs-buy
+The proposal is a small investment: turn the prototype into a minimal tested adapter with opt-in diagnostics. It keeps notification policy in peon, keeps pi integration tiny, and makes long-running agent sessions easier to trust.
+
+### Details
+
+For a longer management discussion, see [`management-slide-deck.md`](management-slide-deck.md).
+
+If the make-vs-buy
 decision needs to be revisited, see
 [`research/existing-pi-peon-implementations.md`](research/existing-pi-peon-implementations.md)
 for the market scan and management summary explaining why this adapter should be
