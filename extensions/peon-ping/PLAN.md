@@ -12,7 +12,7 @@ The proposal is a small investment: turn the prototype into a minimal tested ada
 
 ### Details
 
-For a longer management discussion, see [`management-slide-deck.md`](management-slide-deck.md).
+For a longer management discussion, see [`research/management-slide-deck.md`](research/management-slide-deck.md).
 
 If the make-vs-buy
 decision needs to be revisited, see
