@@ -34,8 +34,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     const image = new Image(base64Data, 'image/png', imageTheme, {
-      maxWidthCells: 20,
-      maxHeightCells: 7,
+      maxHeightCells: 9,
       filename: 'avatar.png',
     })
 
