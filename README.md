@@ -32,3 +32,15 @@ pi install git:github.com/enolive/pi-setup
 ### Prompts
 
 - `plan.md` — Planning prompt template
+
+### Shell completions
+
+Fish completions for the `pi` CLI live in `completions/fish/pi.fish`.
+
+Install them with:
+
+```bash
+./scripts/install-fish-completions.sh
+```
+
+The script copies the file to `${XDG_CONFIG_HOME:-~/.config}/fish/completions/pi.fish`, backs up an existing non-symlink file, and runs `fish -n` when fish is available.
