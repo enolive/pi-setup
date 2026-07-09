@@ -4,11 +4,14 @@
 
 ### Elevator pitch
 
-AI coding agents are starting to work unattended, but humans still miss the important moments: when the agent finishes, fails, or needs attention.
+AI coding agents are starting to work unattended, but humans still miss the important moments: when the agent finishes,
+fails, or needs attention.
 
-We already have a prototype that connects pi to peon notifications, but it is silent when it breaks and has no tests, so we cannot trust it enough to publish.
+We already have a prototype that connects pi to peon notifications, but it is silent when it breaks and has no tests, so
+we cannot trust it enough to publish.
 
-The proposal is a small investment: turn the prototype into a minimal tested adapter with opt-in diagnostics. It keeps notification policy in peon, keeps pi integration tiny, and makes long-running agent sessions easier to trust.
+The proposal is a small investment: turn the prototype into a minimal tested adapter with opt-in diagnostics. It keeps
+notification policy in peon, keeps pi integration tiny, and makes long-running agent sessions easier to trust.
 
 ### Details
 
@@ -53,8 +56,7 @@ test helpers and broader integration tests go in `test/`.
 extensions/peon-ping/
   index.ts                 # EVERYTHING
 
-# standalone-shaped layout to create under extensions/peon-ping/
-# and later copy to a dedicated pi-peon-adapter repository/package
+# standalone-shaped layout to create under a new project/repo
 pi-peon-adapter/
   package.json
   tsconfig.json
@@ -90,11 +92,12 @@ Use this as a lightweight breadcrumb trail if work gets interrupted by side
 quests.
 
 - [x] Rewrite this plan to match the current single-file implementation and the
-      desired incremental refactor direction.
+  desired incremental refactor direction.
 - [ ] Task 0 — Add standalone-package scaffolding for `pi-peon-adapter`.
 - [ ] Task 1 — Extract `src/pi.ts`.
 - [ ] Task 2 — Extract `src/peon.ts`.
 - [ ] Task 3 — Shrink `src/index.ts` and keep root `index.ts` as a facade.
+- [ ] Task 4 — Add opt-in diagnostics.
 - [ ] Add/adjust side-by-side tests and the small integration test.
 
 ---
@@ -232,9 +235,46 @@ export interface PeonPingDeps {
   warn?: (message: string) => void
 }
 
-export function createPeonPingExtension(deps?: PeonPingDeps) { ... }
+export function createPeonPingExtension(deps?: PeonPingDeps) { ...
+}
+
 export default createPeonPingExtension()
 ```
+
+### Task 4 — Add opt-in diagnostics
+
+Add small, removable diagnostics support for pre-publish soak testing. This is
+not a general logging subsystem.
+
+Implementation shape:
+
+- add a tiny diagnostics helper, either local to `src/peon.ts`/`src/pi.ts` at
+  first or as `src/diagnostics.ts` if sharing makes the call sites clearer;
+- enable debug logging only when `process.env.PI_PEON_ADAPTER_DEBUG_LOG` contains
+  a non-empty path;
+- check the env var dynamically so logging can be turned on/off without reloading
+  pi;
+- write plain-text log lines only;
+- include timestamp, hook name, cwd/session id when available, peon path, and
+  error/close/timeout details when relevant;
+- if writing fails, silently disable debug logging for that process until the env
+  path changes;
+- when debug logging is active and a pi UI context is available, show a one-time
+  `ctx.ui.notify` with the configured log path.
+
+Suggested events to log:
+
+- peon executable resolution success/failure;
+- handler dispatch decisions, including skipped hooks and their reason;
+- spawned peon process;
+- stdin write/end failures;
+- child `error`, `close`, and timeout/kill.
+
+Tests:
+
+- isolated tests for the diagnostics helper or injected log writer;
+- one high-level integration test proving that enabling
+  `PI_PEON_ADAPTER_DEBUG_LOG` produces a log line and a one-time notification.
 
 ---
 
