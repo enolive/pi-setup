@@ -28,6 +28,7 @@ pi install git:github.com/enolive/pi-setup
 - `rage-mode` — Enter rage mode for ultimate rants
 - `sarcasm` — Passive aggressive sarcasm mode
 - `tinfoil` — Full on conspiracies
+- `web-search` — Web Search using the Brave API. Clone of https://github.com/badlogic/pi-skills/tree/main/brave-search
 
 ### Prompts
 
