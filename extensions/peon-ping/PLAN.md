@@ -93,11 +93,12 @@ quests.
 
 - [x] Rewrite this plan to match the current single-file implementation and the
   desired incremental refactor direction.
-- [ ] Task 0 — Add standalone-package scaffolding for `pi-peon-adapter`.
-- [ ] Task 1 — Extract `src/pi.ts`.
-- [ ] Task 2 — Extract `src/peon.ts`.
-- [ ] Task 3 — Shrink `src/index.ts` and keep root `index.ts` as a facade.
+- [x] Task 0 — Add standalone-package scaffolding for `pi-peon-adapter`.
+- [x] Task 1 — Extract `src/pi.ts`.
+- [x] Task 2 — Extract `src/peon.ts`.
+- [x] Task 3 — Shrink `src/index.ts` and keep root `index.ts` as a facade.
 - [ ] Task 4 — Add opt-in diagnostics.
+- [ ] Task 5 — Add debug-log activation notification.
 - [ ] Add/adjust side-by-side tests and the small integration test.
 
 ---
@@ -174,7 +175,10 @@ Move all pi-bound behavior from `src/index.ts` into `src/pi.ts`:
   - skip reasons `"reload"` and `"fork"`
   - emit `SessionStart`
   - `source` is `"resume"` for resume, otherwise `"startup"`
-- `before_agent_start` → `UserPromptSubmit`
+- `input` → `UserPromptSubmit`
+  - this maps closer to raw user submission and matches the useful part of the
+    inspected reference implementation; a local debug-log soak confirmed it
+    emits before agent/tool/agent_end activity with `source=interactive`
 - `agent_end` → `Stop`
 - `tool_execution_end`
   - skip when `isError` is false
@@ -246,35 +250,66 @@ export default createPeonPingExtension()
 Add small, removable diagnostics support for pre-publish soak testing. This is
 not a general logging subsystem.
 
+Keep this first diagnostics pass intentionally narrow. Log only pi-event receipt,
+handler decisions, and the handoff to `PeonSink.send()`. Do not instrument
+`peon.ts` process details yet: missing executables are already visible via
+`console.warn`, and fire-and-forget child process behavior should stay quiet
+unless a later soak test shows that deeper runtime diagnostics are needed.
+
 Implementation shape:
 
-- add a tiny diagnostics helper, either local to `src/peon.ts`/`src/pi.ts` at
-  first or as `src/diagnostics.ts` if sharing makes the call sites clearer;
+- add a tiny diagnostics helper, either local to `src/pi.ts` at first or as
+  `src/diagnostics.ts` if the helper is clearer on its own;
 - enable debug logging only when `process.env.PI_PEON_ADAPTER_DEBUG_LOG` contains
   a non-empty path;
-- check the env var dynamically so logging can be turned on/off without reloading
-  pi;
+- check the env var dynamically on each log attempt so logging can be turned
+  on/off without reloading pi;
 - write plain-text log lines only;
-- include timestamp, hook name, cwd/session id when available, peon path, and
-  error/close/timeout details when relevant;
+- include timestamp, hook name, cwd, session id when a payload exists, and the
+  skip/send decision;
 - if writing fails, silently disable debug logging for that process until the env
   path changes;
-- when debug logging is active and a pi UI context is available, show a one-time
-  `ctx.ui.notify` with the configured log path.
+- do not add a UI notification in this task.
 
 Suggested events to log:
 
-- peon executable resolution success/failure;
+- pi hook received, including relevant event details such as `reason`,
+  `toolName`, and `isError`;
 - handler dispatch decisions, including skipped hooks and their reason;
-- spawned peon process;
-- stdin write/end failures;
-- child `error`, `close`, and timeout/kill.
+- `PeonSink.send()` handoff, including `hook_event_name`, `cwd`, and
+  `session_id`.
 
 Tests:
 
-- isolated tests for the diagnostics helper or injected log writer;
-- one high-level integration test proving that enabling
-  `PI_PEON_ADAPTER_DEBUG_LOG` produces a log line and a one-time notification.
+- avoid spreading debug-log assertions through the side-by-side unit tests;
+- add one high-level integration test that enables
+  `PI_PEON_ADAPTER_DEBUG_LOG`, drives a small event flow, and snapshots the log
+  after normalizing timestamps.
+
+---
+
+### Task 5 — Add debug-log activation notification
+
+Consider a later, separate task for notifying users when debug logging becomes
+active. This was deliberately split out of Task 4 because detecting env-var
+changes and showing a one-time notification requires UI context and can easily
+turn into lifecycle/poller complexity.
+
+Desired behavior, if this remains useful after the first diagnostics soak:
+
+- when `PI_PEON_ADAPTER_DEBUG_LOG` changes from empty to a non-empty path and a
+  pi UI context is available, show a one-time `ctx.ui.notify` message that debug
+  logging is enabled and includes the configured log path;
+- avoid adding repeated notification calls to every handler body;
+- prefer a small central mechanism, such as a handler wrapper that records the
+  latest context and/or checks notification state once per received hook;
+- if polling is introduced, define its lifecycle explicitly so tests and reloads
+  do not leak intervals;
+- keep `console.warn` for startup/setup problems without context, such as a
+  missing `peon` executable.
+
+Tests for this task should be explicit about notification timing and one-time
+behavior, and should not be mixed into the basic diagnostics logging test.
 
 ---
 
@@ -291,7 +326,7 @@ Cases:
 - registers all expected handlers;
 - `session_start` reason `"startup"` emits `SessionStart`, `source: "startup"`;
 - `session_start` reason `"resume"` emits `SessionStart`, `source: "resume"`;
-- `before_agent_start` emits `UserPromptSubmit`;
+- `input` emits `UserPromptSubmit`;
 - `agent_end` emits `Stop`;
 - `tool_execution_end` with `isError: true`, `toolName: "bash"` emits
   `PostToolUseFailure`, `tool_name: "Bash"`, `error: "bash failed"`;
@@ -389,15 +424,14 @@ model issues. Keep it small and easy to remove later:
 
 Important actionable warnings should remain visible without enabling debug logs:
 
-- when debug logging is activated and a pi context with UI is available, show a
-  one-time `ctx.ui.notify` message that debug logging is enabled and includes the
-  configured log path;
 - startup/setup problems without a context, such as missing `peon`, should use
   `console.warn`;
 - runtime problems with a pi context may use `ctx.ui.notify(..., "warning" | "error")`
   if they are actionable for the user and not expected to be noisy.
 
-Normal successful dispatch should stay silent.
+Normal successful dispatch should stay silent unless explicit debug logging is
+enabled. A user-visible notification for debug-log activation is deferred to
+Task 5.
 
 ---
 

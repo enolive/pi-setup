@@ -20,7 +20,6 @@ pi install git:github.com/enolive/pi-setup
 ### Extensions
 
 - **avatar** — Displays a fox avatar in terminals that support inline images (Kitty, iTerm2, Ghostty, WezTerm, Warp)
-- **peon-ping** — Bridge to the [peon](https://github.com/PeonPing/peon-ping) CLI for sound notifications and lifecycle events
 
 ### Skills
 

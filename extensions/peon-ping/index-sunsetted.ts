@@ -1,3 +1,4 @@
+// no longer supported. Still in the repo for historical reference.
 /**
  * peon-ping bridge for pi
  *
