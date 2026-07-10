@@ -23,7 +23,10 @@ pi install git:github.com/enolive/pi-setup
 
 ### Skills
 
+- `elevator-pitch` — Summarize the motivation for something in a short essay
 - `kaaaarl` — Behave like Carl the llama
+- `management-slide-deck` – Create a management slide deck
+- `market-research` – Use the web to research if there are already existing products or services that solve the same problem
 - `rage-mode` — Enter rage mode for ultimate rants
 - `sarcasm` — Passive aggressive sarcasm mode
 - `tinfoil` — Full on conspiracies
