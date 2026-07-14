@@ -5,7 +5,7 @@
  * Only renders in terminals that support inline images (Kitty, iTerm2, Ghostty, WezTerm, Warp).
  */
 
-import { ExtensionAPI, VERSION } from '@earendil-works/pi-coding-agent'
+import { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import { readFileSync } from 'node:fs'
 import { Image, getCapabilities, ImageTheme } from '@earendil-works/pi-tui'
 import path from 'path'
@@ -17,9 +17,6 @@ const base64Data = readFileSync(imagePath).toString('base64')
 export default function (pi: ExtensionAPI) {
   pi.on('session_start', async (_event, ctx) => {
     if (ctx.mode !== 'tui') return
-
-    ctx.ui.notify('version is ' + VERSION)
-
     const caps = getCapabilities()
     if (!caps.images) {
       ctx.ui.notify(
