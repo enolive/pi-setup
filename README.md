@@ -20,7 +20,6 @@ pi install git:github.com/enolive/pi-setup
 ### Extensions
 
 - **avatar** — Displays a fox avatar in terminals that support inline images (Kitty, iTerm2, Ghostty, WezTerm, Warp)
-- **change-bg** — Overrides the overall color of the terminal via OSC
 
 ### Skills
 
