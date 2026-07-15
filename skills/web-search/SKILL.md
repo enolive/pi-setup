@@ -24,6 +24,14 @@ Requires a Brave Search API account with a free subscription. A credit card is r
    npm install
    ```
 
+## Prerequisites
+
+This skill requires installed node packages to run.
+If you encounter an error
+
+- check if `node_modules` are present
+- if not, perform `npm install`
+
 ## Search
 
 ```bash
