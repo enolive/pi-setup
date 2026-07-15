@@ -18,8 +18,7 @@ export default function (pi: ExtensionAPI) {
   const caps = getCapabilities()
   if (!caps.images) {
     console.warn(
-      'terminal does not support inline images (needs Kitty, iTerm2, Ghostty, WezTerm or Warp) — widget disabled.',
-      'warning',
+      '[avatar] terminal does not support inline images (needs Kitty, iTerm2, Ghostty, WezTerm or Warp) — widget disabled.',
     )
     return
   }
