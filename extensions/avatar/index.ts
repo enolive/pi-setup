@@ -15,17 +15,17 @@ const base64Data = readFileSync(imagePath).toString('base64')
 
 // noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
+  const caps = getCapabilities()
+  if (!caps.images) {
+    console.warn(
+      'terminal does not support inline images (needs Kitty, iTerm2, Ghostty, WezTerm or Warp) — widget disabled.',
+      'warning',
+    )
+    return
+  }
+
   pi.on('session_start', async (_event, ctx) => {
     if (ctx.mode !== 'tui') return
-    const caps = getCapabilities()
-    if (!caps.images) {
-      ctx.ui.notify(
-        '[avatar]: terminal does not support inline images (needs Kitty, iTerm2, Ghostty, WezTerm or Warp) — widget disabled.',
-        'warning',
-      )
-      return
-    }
-
     const theme = ctx.ui.theme
 
     const imageTheme: ImageTheme = {
