@@ -20,6 +20,7 @@ pi install git:github.com/enolive/pi-setup
 ### Extensions
 
 - **avatar** — Displays a fox avatar in terminals that support inline images (Kitty, iTerm2, Ghostty, WezTerm, Warp)
+- **change-bg** — Overrides the overall color of the terminal via OSC
 
 ### Skills
 
@@ -47,3 +48,7 @@ Install them with:
 ```
 
 The script copies the file to `${XDG_CONFIG_HOME:-~/.config}/fish/completions/pi.fish`, backs up an existing non-symlink file, and runs `fish -n` when fish is available.
+
+### Themes
+
+- `enolive` opinionated own theme
