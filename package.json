@@ -2,7 +2,7 @@
   "name": "pi-setup",
   "version": "1.0.0",
   "type": "module",
-  "description": "Hand-crafted pi setup with extensions, skills, and prompts",
+  "description": "Hand-crafted pi setup with extensions, skills, themes and prompts",
   "keywords": [
     "pi-package"
   ],
