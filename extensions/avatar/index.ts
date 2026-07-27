@@ -23,7 +23,7 @@ export default function (pi: ExtensionAPI) {
     return
   }
 
-  pi.on('session_start', async (_event, ctx) => {
+  pi.on('session_start', (_event, ctx) => {
     if (ctx.mode !== 'tui') return
     const theme = ctx.ui.theme
 

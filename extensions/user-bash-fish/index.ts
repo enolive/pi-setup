@@ -32,7 +32,7 @@ export default function (pi: ExtensionAPI) {
     return
   }
 
-  pi.on('user_bash', async () => {
+  pi.on('user_bash', () => {
     return { operations: createLocalBashOperations({ shellPath: FISH }) }
   })
 }

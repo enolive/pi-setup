@@ -6,9 +6,15 @@ import { defineConfig } from 'eslint/config'
 export default defineConfig([
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+    ignores: ['skills/web-search/**'],
     plugins: { js },
-    extends: ['js/recommended'],
-    languageOptions: { globals: globals.node },
+    extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: {
+        projectService: true,
+      },
+    },
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -24,5 +30,4 @@ export default defineConfig([
       ],
     },
   },
-  tseslint.configs.recommended,
 ])
