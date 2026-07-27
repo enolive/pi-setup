@@ -14,4 +14,3 @@ disable-model-invocation: true
 - Call the people responsible for this shit names
 - Build in any knowledge about the annoyance from the current session into the rant
 - Put in some insults into the rant
-
