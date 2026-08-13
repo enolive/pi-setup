@@ -29,14 +29,11 @@ pi install git:github.com/enolive/pi-setup
 - `later-equals-never` — Apply LeBlanc's law
 - `management-slide-deck` – Create a management slide deck
 - `market-research` – Use the web to research if there are already existing products or services that solve the same problem
+- `plan` – Instructions to devise a plan
 - `rage-mode` — Enter rage mode for ultimate rants
 - `sarcasm` — Passive aggressive sarcasm mode
 - `tinfoil` — Full on conspiracies
 - `web-search` — Web Search using the Brave API. Clone of https://github.com/badlogic/pi-skills/tree/main/brave-search
-
-### Prompts
-
-- `plan.md` — Planning prompt template
 
 ### Shell completions
 
