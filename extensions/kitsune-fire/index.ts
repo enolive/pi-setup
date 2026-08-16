@@ -1,32 +1,31 @@
 /**
- * Kitsune Fire — climb working indicator + cycling fox messages
+ * Kitsune Fire — climb working indicator & one fox message per turn
  *
- * Fox-fire climb animation with constant visual width (6 cells).
- * While the agent runs, random kitsune lines rotate via setWorkingMessage.
+ * Frames and working message are independent:
+ * - indicator: fixed-width climb loop
+ * - message: one shuffled line per agent run
  */
 
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 
-/** Approximate terminal cell width (emoji ≈ 2, marks ≈ 1). */
-function cellWidth(s: string): number {
-  let w = 0
-  for (const ch of s) {
-    if (ch === '🦊' || ch === '🔥' || ch === '✨') w += 2
-    else w += 1
-  }
-  return w
-}
+const FOX = '🦊'
+const FIRE = '🔥'
 
-function padCells(s: string, width: number): string {
-  const pad = Math.max(0, width - cellWidth(s))
-  return s + ' '.repeat(pad)
-}
-
-// Climb: ember → spark → blaze → settle (fox left-aligned, width 6)
-const RAW_FRAMES = ['🦊', '🦊·', '🦊*', '🦊✦', '🦊🔥', '🦊✦🔥', '🦊🔥🔥', '🦊✦🔥', '🦊🔥', '🦊✦']
-
-const WIDTH = Math.max(...RAW_FRAMES.map(cellWidth))
-const FRAMES = RAW_FRAMES.map(f => padCells(f, WIDTH))
+// Climb: ember → spark → blaze → settle (fox left-aligned, constant width)
+const CLIMB = [
+  FOX,
+  `${FOX}·`,
+  `${FOX}*`,
+  `${FOX}✦`,
+  `${FOX}${FIRE}`,
+  `${FOX}✦${FIRE}`,
+  `${FOX}${FIRE}${FIRE}`,
+  `${FOX}✦${FIRE}`,
+  `${FOX}${FIRE}`,
+  `${FOX}✦`,
+]
+const CLIMB_WIDTH = Math.max(...CLIMB.map(cellWidth))
+const FRAMES = CLIMB.map(step => padCells(step, CLIMB_WIDTH))
 
 const MESSAGES = [
   'kindling foxfire',
@@ -51,53 +50,56 @@ const MESSAGES = [
   'kitsune concentration',
 ]
 
-function shuffle<T>(items: T[]): T[] {
-  return items.sort(() => Math.random() - 0.5)
-}
-
+// noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
-  let timer: ReturnType<typeof setInterval> | undefined
   let deck: string[] = []
-  let deckIndex = 0
-
-  const stopMessages = (ctx: ExtensionContext) => {
-    if (timer !== undefined) {
-      clearInterval(timer)
-      timer = undefined
-    }
-    ctx.ui.setWorkingMessage()
-  }
 
   const nextMessage = (): string => {
-    if (deckIndex >= deck.length) {
-      deck = shuffle(MESSAGES)
-      deckIndex = 0
-    }
-    return `${deck[deckIndex++]}...`
+    // cycle through randomly shuffled messages until they are exhausted. Then start over.
+    if (deck.length === 0) deck = shuffle(MESSAGES)
+    const raw = deck.pop()!
+    // end every message with an ellipsis
+    return `${raw}...`
   }
 
-  const startMessages = (ctx: ExtensionContext) => {
-    stopMessages(ctx)
+  const applyIndicator = (ctx: ExtensionContext) => {
+    if (ctx.mode !== 'tui') return
+    ctx.ui.setWorkingIndicator({ frames: FRAMES, intervalMs: 90 })
+  }
+
+  const applyMessage = (ctx: ExtensionContext) => {
+    if (ctx.mode !== 'tui') return
     ctx.ui.setWorkingMessage(nextMessage())
-    timer = setInterval(() => {
-      ctx.ui.setWorkingMessage(nextMessage())
-    }, 2200)
   }
 
-  pi.on('session_start', (_event, ctx) => {
-    if (ctx.mode !== 'tui') return
-    ctx.ui.setWorkingIndicator({
-      frames: FRAMES,
-      intervalMs: 90,
-    })
-  })
+  pi.on('session_start', (_event, ctx) => applyIndicator(ctx))
+  pi.on('agent_start', (_event, ctx) => applyMessage(ctx))
+}
 
-  pi.on('agent_start', (_event, ctx) => {
-    if (ctx.mode !== 'tui') return
-    startMessages(ctx)
-  })
+function padCells(s: string, width: number): string {
+  const pad = Math.max(0, width - cellWidth(s))
+  return s + ' '.repeat(pad)
+}
 
-  pi.on('agent_end', (_event, ctx) => {
-    stopMessages(ctx)
-  })
+/** Approximate terminal cell width (emoji ≈ 2, marks ≈ 1). */
+function cellWidth(s: string): number {
+  let w = 0
+  for (const ch of s) {
+    if (ch === FOX || ch === FIRE) w += 2
+    else w += 1
+  }
+  return w
+}
+
+/**
+ * Durstenfeld shuffle algorithm, see
+ * https://stackoverflow.com/a/12646864
+ */
+function shuffle<T>(array: T[]): T[] {
+  const copy = [...array]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
 }
