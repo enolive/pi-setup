@@ -1,7 +1,7 @@
 /**
  * Fox Status Extension
  *
- * Fox-themed working spinner and footer status bar.
+ * Fox-themed footer status bar.
  * Pairs with the avatar extension's fox mascot.
  *
  */
