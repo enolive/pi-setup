@@ -39,6 +39,8 @@ Use the `web-search` skill for the search phase. Load it before researching exte
 
 ## What to look for
 
+- How widespread is this solution?
+- Is it actively maintained?
 - Is it solving the same problem or only an adjacent one?
 - Is it a thin adapter or a full product/subsystem?
 - Does it duplicate policy that should live elsewhere?
@@ -92,4 +94,11 @@ Decision: make, do not buy.
 Use existing implementations as references, but build the smaller adapter because
 it matches our runtime contract, current dependency expectations, diagnostics,
 and testing requirements.
+```
+
+```md
+Decision: buy, do not make.
+
+The found implementation clearly solves the problem, even if it may be more generic than needed. Hand-rolling it would
+increase the review / security / maintenance surface area and fall into the **not invented here** pattern.
 ```
