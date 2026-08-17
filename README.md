@@ -20,6 +20,7 @@ pi install git:github.com/enolive/pi-setup
 ### Extensions
 
 - **avatar** — Displays a fox avatar in terminals that support inline images (Kitty, iTerm2, Ghostty, WezTerm, Warp)
+- **fox-status** — Show a fox-themed status in the terminal
 - **user-bash-fish** — Use fish as the shell for ! and !! commands if it is installed
 
 ### Skills
