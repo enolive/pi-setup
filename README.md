@@ -25,16 +25,18 @@ pi install git:github.com/enolive/pi-setup
 
 ### Skills
 
-- `elevator-pitch` — Summarize the motivation for something in a short essay
-- `kaaaarl` — Behave like Carl the llama
-- `later-equals-never` — Apply LeBlanc's law
-- `management-slide-deck` – Create a management slide deck
-- `market-research` – Use the web to research if there are already existing products or services that solve the same problem
-- `plan` – Instructions to devise a plan
-- `rage-mode` — Enter rage mode for ultimate rants
-- `sarcasm` — Passive aggressive sarcasm mode
-- `tinfoil` — Full on conspiracies
-- `web-search` — Web Search using the Brave API. Clone of https://github.com/badlogic/pi-skills/tree/main/brave-search
+Various skills organized in `fun` and `serious` categories.
+
+for instance,
+
+- `elevator-pitch`: summarize the motivation for something in a short essay
+- `git-gud`: state that the user has skill issues and it is not your problem in the style of the Dark Souls community
+- `market-research`: use the web to research if there are already existing products or services that solve the same problem
+- `plan`: opinionated way of writing and performing a plan
+- `web-search`: web search using the Brave API. Clone of https://github.com/badlogic/pi-skills/tree/main/brave-search
+
+`rage-mode` is kind of an exception here. While it was initially meant solely for fun, it is actually quite useful to generate rants
+or getting honest reviews. If the worst this skill finds about your work are typos, consider the work being pretty good. 
 
 ### Shell completions
 

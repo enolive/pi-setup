@@ -6,7 +6,8 @@ import { defineConfig } from 'eslint/config'
 export default defineConfig([
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    ignores: ['skills/web-search/**'],
+    // web-search is ignored as it is basically a clone of an existing repo
+    ignores: ['skills/serious/web-search/**'],
     plugins: { js },
     extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
     languageOptions: {
