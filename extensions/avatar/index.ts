@@ -10,9 +10,6 @@ import { readFileSync } from 'node:fs'
 import { Image, getCapabilities, ImageTheme } from '@earendil-works/pi-tui'
 import path from 'path'
 
-const imagePath = path.join(import.meta.dirname, 'avatar.png')
-const base64Data = readFileSync(imagePath).toString('base64')
-
 // noinspection JSUnusedGlobalSymbols
 export default function (pi: ExtensionAPI) {
   const caps = getCapabilities()
@@ -22,6 +19,9 @@ export default function (pi: ExtensionAPI) {
     )
     return
   }
+
+  const imagePath = path.join(import.meta.dirname, 'avatar.png')
+  const base64Data = readFileSync(imagePath).toString('base64')
 
   pi.on('session_start', (_event, ctx) => {
     if (ctx.mode !== 'tui') return
